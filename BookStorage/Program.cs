@@ -15,6 +15,7 @@
         const string CommandRemoveBook = "2";
         const string CommandShowAllBooks = "3";
         const string CommandShowFilteredBooks = "4";
+        const string CommandExit = "5";
 
         private List<Book> _books;
         private bool _isActive;
@@ -34,7 +35,8 @@
                 Console.WriteLine($"{CommandAddBook}) Добавить книгу\n" +
                                   $"{CommandRemoveBook}) Удалить книгу\n" +
                                   $"{CommandShowAllBooks}) Показать все книги\n" +
-                                  $"{CommandShowFilteredBooks}) Показать книги по параметру");
+                                  $"{CommandShowFilteredBooks}) Показать книги по параметру\n" +
+                                  $"{CommandExit}) Закрыть программу");
                 string userCommand = Console.ReadLine();
                 Console.Clear();
 
@@ -54,6 +56,10 @@
 
                     case CommandShowFilteredBooks:
                         ShowBooksByParametr(SelectParametr());
+                        break;
+
+                    case CommandExit:
+                        _isActive = false;
                         break;
                 }
             }
