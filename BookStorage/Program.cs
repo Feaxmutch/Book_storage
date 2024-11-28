@@ -9,16 +9,44 @@
         }
     }
 
+    public static class UserUtilits
+    {
+        public static bool TryRequestString(string massage, out string returnedString)
+        {
+            Console.WriteLine(massage);
+            returnedString = Console.ReadLine();
+
+            if (returnedString == string.Empty)
+            {
+                Console.WriteLine("Вы ничего не ввели.");
+                return false;
+            }
+
+            return true;
+        }
+
+        public static bool TryRequestNumber(string massage, out int returnedNumber)
+        {
+            if (TryRequestString(massage, out string renurnedStringNumber))
+            {
+                if (int.TryParse(renurnedStringNumber, out returnedNumber))
+                {
+                    return true;
+                }
+                else
+                {
+                    Console.WriteLine($"\"{renurnedStringNumber}\" не является числом");
+                }
+            }
+
+            returnedNumber = 0;
+            return false;
+        }
+    }
+
     public class Storage
     {
-        const string CommandAddBook = "1";
-        const string CommandRemoveBook = "2";
-        const string CommandShowAllBooks = "3";
-        const string CommandShowFilteredBooks = "4";
-        const string CommandExit = "5";
-
         private List<Book> _books;
-        private bool _isActive;
 
         public Storage()
         {
@@ -27,9 +55,15 @@
 
         public void OpenMenu()
         {
-            _isActive = true;
+            const string CommandAddBook = "1";
+            const string CommandRemoveBook = "2";
+            const string CommandShowAllBooks = "3";
+            const string CommandShowFilteredBooks = "4";
+            const string CommandExit = "5";
 
-            while (_isActive)
+            bool isActive = true;
+
+            while (isActive)
             {
                 Console.Clear();
                 Console.WriteLine($"{CommandAddBook}) Добавить книгу\n" +
@@ -59,7 +93,7 @@
                         break;
 
                     case CommandExit:
-                        _isActive = false;
+                        isActive = false;
                         break;
                 }
             }
@@ -67,11 +101,11 @@
 
         private void AddBook()
         {
-            if (TryRequsetAllParametrs(out string name, out string autor, out int year))
+            if (TryRequsetAllParametrs(out string name, out string author, out int year))
             {
-                Book addedBook = new(name, autor, year);
+                Book addedBook = new(name, author, year);
 
-                if (BookIsExist(addedBook.Name, addedBook.Autor, addedBook.Year))
+                if (BookIsExist(addedBook.Name, addedBook.Author, addedBook.Year))
                 {
                     Console.WriteLine("Такая книга уже существует");
                 }
@@ -90,9 +124,9 @@
         {
             ShowBooks(_books);
 
-            if (TryRequsetAllParametrs(out string name, out string autor, out int year))
+            if (TryRequsetAllParametrs(out string name, out string author, out int year))
             {
-                if (TryFindBook(_books, name, autor, year, out Book book))
+                if (TryFindBook(_books, name, author, year, out Book book))
                 {
                     _books.Remove(book);
                     Console.WriteLine("Удалена следующая книга:");
@@ -119,14 +153,14 @@
 
         private void ShowBook(Book book)
         {
-            Console.WriteLine($"название: {book.Name} | автор: {book.Autor} | год выпуска: {book.Year}");
+            Console.WriteLine($"название: {book.Name} | автор: {book.Author} | год выпуска: {book.Year}");
         }
 
-        private bool TryFindBook(List<Book> books, string name, string autor, int year, out Book book)
+        private bool TryFindBook(List<Book> books, string name, string author, int year, out Book book)
         {
-            List<Book> filteredBooks = FilterBooks(_books, BookParametr.Name, name);
-            filteredBooks = FilterBooks(filteredBooks, BookParametr.Autor, autor);
-            filteredBooks = FilterBooks(filteredBooks, BookParametr.Year, year.ToString());
+            List<Book> filteredBooks = FilterBooks(books, BookParameter.Name, name);
+            filteredBooks = FilterBooks(filteredBooks, BookParameter.Author, author);
+            filteredBooks = FilterBooks(filteredBooks, BookParameter.Year, numberParametr: year);
 
             if (filteredBooks.Count > 0)
             {
@@ -140,32 +174,25 @@
             }
         }
 
-        private List<Book> FilterBooks(List<Book> books, BookParametr bookParametr, string parametrValue)
+        private List<Book> FilterBooks(List<Book> books, BookParameter bookParameter, string stringParameter = "", int numberParametr = 0)
         {
             List<Book> filteredBooks = new();
             bool isCorrectParametr = false;
 
             foreach (var book in books)
             {
-                switch (bookParametr)
+                switch (bookParameter)
                 {
-                    case BookParametr.Name:
-                        isCorrectParametr = book.Name == parametrValue;
+                    case BookParameter.Name:
+                        isCorrectParametr = book.Name == stringParameter;
                         break;
 
-                    case BookParametr.Autor:
-                        isCorrectParametr = book.Autor == parametrValue;
+                    case BookParameter.Author:
+                        isCorrectParametr = book.Author == stringParameter;
                         break;
 
-                    case BookParametr.Year:
-                        if (int.TryParse(parametrValue, out int year))
-                        {
-                            isCorrectParametr = book.Year == year;
-                        }
-                        else
-                        {
-                            isCorrectParametr = false;
-                        }
+                    case BookParameter.Year:
+                        isCorrectParametr = book.Year == numberParametr;
                         break;
                 }
 
@@ -178,83 +205,86 @@
             return filteredBooks;
         }
 
-        private bool TryRequestParametr(BookParametr bookParametr, out string parametrValue)
+        private bool TryRequestParametr(BookParameter bookParametr, out string stringParameter, out int numberParametr)
         {
-            Console.Write("Введите ");
+            string massage = "Введите ";
 
             switch (bookParametr)
             {
-                case BookParametr.Name:
-                    Console.Write("название ");
+                case BookParameter.Name:
+                    massage += "название ";
                     break;
 
-                case BookParametr.Autor:
-                    Console.Write("автора ");
+                case BookParameter.Author:
+                    massage += "автора ";
                     break;
 
-                case BookParametr.Year:
-                    Console.Write("год выпуска ");
+                case BookParameter.Year:
+                    massage += "год выпуска ";
                     break;
             }
 
-            Console.Write("книги: ");
-            parametrValue = Console.ReadLine();
+            massage += "книги";
 
-            if (parametrValue != string.Empty)
+            if (bookParametr == BookParameter.Year)
             {
-                if (bookParametr == BookParametr.Year)
+                if (UserUtilits.TryRequestNumber(massage, out int parameter))
                 {
-                    if (int.TryParse(parametrValue, out int year))
+                    if (parameter < 0)
                     {
-                        if (year < 0)
-                        {
-                            Console.WriteLine("Год не может быть отрицательным.");
-                            return false;
-                        }
-                    }
-                    else
-                    {
-                        Console.WriteLine("Год должен быть числом.");
+                        Console.WriteLine("Год не может быть отрицательным.");
+                        stringParameter = string.Empty;
+                        numberParametr = 0;
                         return false;
                     }
-                }
 
-                return true;
+                    stringParameter = string.Empty;
+                    numberParametr = parameter;
+                    return true;
+                }
             }
             else
             {
-                Console.WriteLine("Вы ничего не ввели.");
-                return false;
+                if (UserUtilits.TryRequestString(massage, out string parameter))
+                {
+                    stringParameter = parameter;
+                    numberParametr = 0;
+                    return true;
+                }
             }
+
+            stringParameter = string.Empty;
+            numberParametr = 0;
+            return false;
         }
 
-        private bool TryRequsetAllParametrs(out string name, out string autor, out int year)
+        private bool TryRequsetAllParametrs(out string name, out string author, out int year)
         {
-            if (TryRequestParametr(BookParametr.Name, out string returnedName))
+            if (TryRequestParametr(BookParameter.Name, out string returnedName, out int _))
             {
-                if (TryRequestParametr(BookParametr.Autor, out string returnedAutor))
+                if (TryRequestParametr(BookParameter.Author, out string returnedAuthor, out int _))
                 {
-                    if (TryRequestParametr(BookParametr.Year, out string returnedYear))
+                    if (TryRequestParametr(BookParameter.Year, out string _, out int returnedYear))
                     {
                         name = returnedName;
-                        autor = returnedAutor;
-                        year = int.Parse(returnedYear);
+                        author = returnedAuthor;
+                        year = returnedYear;
                         return true;
                     }
                 }
             }
 
             name = string.Empty;
-            autor = string.Empty;
+            author = string.Empty;
             year = -1;
             return false;
         }
 
-        private void ShowBooksByParametr(BookParametr bookParametr)
+        private void ShowBooksByParametr(BookParameter bookParameter)
         {
-            if (TryRequestParametr(bookParametr, out string returnedParametr))
+            if (TryRequestParametr(bookParameter, out string stringParameter, out int numberParameter))
             {
-                List<Book> filteredBooks = FilterBooks(_books, bookParametr, returnedParametr);
+                List<Book> filteredBooks = FilterBooks(_books, bookParameter, stringParameter, numberParameter);
 
                 if (filteredBooks.Count > 0)
                 {
@@ -264,39 +294,41 @@
                 {
                     Console.WriteLine("Книги не найдены");
                 }
+
+                Console.ReadKey();
             }
         }
 
-        private BookParametr SelectParametr()
+        private BookParameter SelectParametr()
         {
-            const string NameParametr = "1";
-            const string AutorParametr = "2";
-            const string YearParametr = "3";
+            const string NameParameter = "1";
+            const string AuthorParameter = "2";
+            const string YearParameter = "3";
 
             bool isSelecting = true;
-            BookParametr selectedParametr = default;
+            BookParameter selectedParametr = default;
 
             while (isSelecting)
             {
                 Console.WriteLine("Выберите параметр книги");
-                Console.WriteLine($"{NameParametr}) Название");
-                Console.WriteLine($"{AutorParametr}) Автор");
-                Console.WriteLine($"{YearParametr}) Год выпуска");
+                Console.WriteLine($"{NameParameter}) Название");
+                Console.WriteLine($"{AuthorParameter}) Автор");
+                Console.WriteLine($"{YearParameter}) Год выпуска");
 
                 switch (Console.ReadLine())
                 {
-                    case NameParametr:
-                        selectedParametr = BookParametr.Name;
+                    case NameParameter:
+                        selectedParametr = BookParameter.Name;
                         isSelecting = false;
                         break;
 
-                    case AutorParametr:
-                        selectedParametr = BookParametr.Autor;
+                    case AuthorParameter:
+                        selectedParametr = BookParameter.Author;
                         isSelecting = false;
                         break;
 
-                    case YearParametr:
-                        selectedParametr = BookParametr.Year;
+                    case YearParameter:
+                        selectedParametr = BookParameter.Year;
                         isSelecting = false;
                         break;
                 }
@@ -305,32 +337,32 @@
             return selectedParametr;
         }
 
-        private bool BookIsExist(string name, string autor, int year)
+        private bool BookIsExist(string name, string author, int year)
         {
-            return TryFindBook(_books, name, autor, year, out Book _);
+            return TryFindBook(_books, name, author, year, out Book _);
         }
     }
 
     public class Book
     {
-        public Book(string name, string autor, int year)
+        public Book(string name, string author, int year)
         {
             Name = name;
-            Autor = autor;
+            Author = author;
             Year = year;
         }
 
         public string Name { get; }
 
-        public string Autor { get; }
+        public string Author { get; }
 
         public int Year { get; }
     }
 
-    public enum BookParametr
+    public enum BookParameter
     {
         Name,
-        Autor,
+        Author,
         Year
     }
 }
