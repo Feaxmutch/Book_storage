@@ -105,7 +105,7 @@
             {
                 Book addedBook = new(name, author, year);
 
-                if (BookIsExist(addedBook.Name, addedBook.Author, addedBook.Year))
+                if (TryFindBook(_books, name, author, year, out Book _))
                 {
                     Console.WriteLine("Такая книга уже существует");
                 }
@@ -160,7 +160,7 @@
         {
             List<Book> filteredBooks = FilterBooks(books, BookParameter.Name, name);
             filteredBooks = FilterBooks(filteredBooks, BookParameter.Author, author);
-            filteredBooks = FilterBooks(filteredBooks, BookParameter.Year, numberParametr: year);
+            filteredBooks = FilterBooks(filteredBooks, BookParameter.Year, year);
 
             if (filteredBooks.Count > 0)
             {
@@ -174,25 +174,46 @@
             }
         }
 
-        private List<Book> FilterBooks(List<Book> books, BookParameter bookParameter, string stringParameter = "", int numberParametr = 0)
+        private List<Book> FilterBooks(List<Book> books, BookParameter bookParameter, object parameterValue)
         {
             List<Book> filteredBooks = new();
             bool isCorrectParametr = false;
+            bool isCorrectType = false;
+
+            switch (bookParameter)
+            {
+                case BookParameter.Name:
+                    isCorrectType = parameterValue is string;
+                    break;
+
+                case BookParameter.Author:
+                    isCorrectType = parameterValue is string;
+                    break;
+
+                case BookParameter.Year:
+                    isCorrectType = parameterValue is int;
+                    break;
+            }
+
+            if (isCorrectType == false)
+            {
+                throw new ArgumentException("incorrect parameter type", nameof(parameterValue));
+            }
 
             foreach (var book in books)
             {
                 switch (bookParameter)
                 {
                     case BookParameter.Name:
-                        isCorrectParametr = book.Name == stringParameter;
+                        isCorrectParametr = book.Name == (string)parameterValue;
                         break;
 
                     case BookParameter.Author:
-                        isCorrectParametr = book.Author == stringParameter;
+                        isCorrectParametr = book.Author == (string)parameterValue;
                         break;
 
                     case BookParameter.Year:
-                        isCorrectParametr = book.Year == numberParametr;
+                        isCorrectParametr = book.Year == (int)parameterValue;
                         break;
                 }
 
@@ -205,7 +226,7 @@
             return filteredBooks;
         }
 
-        private bool TryRequestParametr(BookParameter bookParametr, out string stringParameter, out int numberParametr)
+        private bool TryRequestParametr(BookParameter bookParametr, out object parameterValue)
         {
             string massage = "Введите ";
 
@@ -228,47 +249,43 @@
 
             if (bookParametr == BookParameter.Year)
             {
-                if (UserUtilits.TryRequestNumber(massage, out int parameter))
+                if (UserUtilits.TryRequestNumber(massage, out int number))
                 {
-                    if (parameter < 0)
+                    if (number < 0)
                     {
                         Console.WriteLine("Год не может быть отрицательным.");
-                        stringParameter = string.Empty;
-                        numberParametr = 0;
+                        parameterValue = null;
                         return false;
                     }
 
-                    stringParameter = string.Empty;
-                    numberParametr = parameter;
+                    parameterValue = number;
                     return true;
                 }
             }
             else
             {
-                if (UserUtilits.TryRequestString(massage, out string parameter))
+                if (UserUtilits.TryRequestString(massage, out string str))
                 {
-                    stringParameter = parameter;
-                    numberParametr = 0;
+                    parameterValue = str;
                     return true;
                 }
             }
 
-            stringParameter = string.Empty;
-            numberParametr = 0;
+            parameterValue = null;
             return false;
         }
 
         private bool TryRequsetAllParametrs(out string name, out string author, out int year)
         {
-            if (TryRequestParametr(BookParameter.Name, out string returnedName, out int _))
+            if (TryRequestParametr(BookParameter.Name, out object returnedName))
             {
-                if (TryRequestParametr(BookParameter.Author, out string returnedAuthor, out int _))
+                if (TryRequestParametr(BookParameter.Author, out object returnedAuthor))
                 {
-                    if (TryRequestParametr(BookParameter.Year, out string _, out int returnedYear))
+                    if (TryRequestParametr(BookParameter.Year,out object returnedYear))
                     {
-                        name = returnedName;
-                        author = returnedAuthor;
-                        year = returnedYear;
+                        name = (string)returnedName;
+                        author = (string)returnedAuthor;
+                        year = (int)returnedYear;
                         return true;
                     }
                 }
@@ -282,9 +299,9 @@
 
         private void ShowBooksByParametr(BookParameter bookParameter)
         {
-            if (TryRequestParametr(bookParameter, out string stringParameter, out int numberParameter))
+            if (TryRequestParametr(bookParameter, out object parameterValue))
             {
-                List<Book> filteredBooks = FilterBooks(_books, bookParameter, stringParameter, numberParameter);
+                List<Book> filteredBooks = FilterBooks(_books, bookParameter, parameterValue);
 
                 if (filteredBooks.Count > 0)
                 {
@@ -335,11 +352,6 @@
             }
 
             return selectedParametr;
-        }
-
-        private bool BookIsExist(string name, string author, int year)
-        {
-            return TryFindBook(_books, name, author, year, out Book _);
         }
     }
 
